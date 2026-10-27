@@ -5028,6 +5028,36 @@ def test_bytesize_conversions(input_value, output, human_bin, human_dec, human_s
     assert m.size.human_readable(separator=' ') == human_sep
 
 
+def test_bytesize_human_readable_boundary():
+    # Issue #14056: ByteSize just below a unit boundary should round to the next unit rather than 1024.0 / 1000.0
+    assert ByteSize(1048575).human_readable() == '1.0MiB'
+    assert ByteSize(1048575).human_readable(separator=' ') == '1.0 MiB'
+    assert ByteSize(999_999).human_readable(decimal=True) == '1.0MB'
+    assert ByteSize(999_999).human_readable(decimal=True, separator=' ') == '1.0 MB'
+
+    # Check boundaries across binary units
+    assert ByteSize(1023).human_readable() == '1023B'
+    assert ByteSize(1024).human_readable() == '1.0KiB'
+    assert ByteSize(1024**2 - 1).human_readable() == '1.0MiB'
+    assert ByteSize(1024**3 - 1).human_readable() == '1.0GiB'
+    assert ByteSize(1024**4 - 1).human_readable() == '1.0TiB'
+    assert ByteSize(1024**5 - 1).human_readable() == '1.0PiB'
+    assert ByteSize(1024**6 - 1).human_readable() == '1.0EiB'
+
+    # Check boundaries across decimal units
+    assert ByteSize(999).human_readable(decimal=True) == '999B'
+    assert ByteSize(1000).human_readable(decimal=True) == '1.0KB'
+    assert ByteSize(1000**2 - 1).human_readable(decimal=True) == '1.0MB'
+    assert ByteSize(1000**3 - 1).human_readable(decimal=True) == '1.0GB'
+    assert ByteSize(1000**4 - 1).human_readable(decimal=True) == '1.0TB'
+    assert ByteSize(1000**5 - 1).human_readable(decimal=True) == '1.0PB'
+    assert ByteSize(1000**6 - 1).human_readable(decimal=True) == '1.0EB'
+
+    # Negative values
+    assert ByteSize(-1048575).human_readable() == '-1.0MiB'
+    assert ByteSize(-999_999).human_readable(decimal=True) == '-1.0MB'
+
+
 def test_bytesize_to():
     class Model(BaseModel):
         size: ByteSize
